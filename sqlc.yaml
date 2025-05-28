@@ -1,0 +1,20 @@
+version: "2" # Specify the sqlc configuration file format version
+sql:
+  - schema: "scripts/migrations/*.sql" # Path to your SQL schema migration files
+    queries: "internal/db/queries/*.sql" # Path to your SQL query files
+    engine: "postgresql" # Specify the database engine
+    gen:
+      go:
+        package: "db" # The Go package name for the generated code
+        out: "internal/db" # The directory where the Go code will be generated
+        emit_json_tags: true # Include JSON tags on generated structs
+        emit_empty_slices: true # Generate empty slices for nullable array types
+        emit_interface: false # Set to true if you want an interface for your Queries struct
+        emit_exact_table_names: false # If true, table names like "documents" will be "Document", not "Document"
+        # Optional: You can map SQL types to custom Go types here if needed.
+        # For example, mapping 'pgtype.UUID' to your own 'models.UUID' if you had one.
+        overrides: 
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID" # Specify the full import path
+            # Optional: if your SQL has a default UUID generation, you might also use:
+            # emit_default_values: true # To emit default values for Go types
