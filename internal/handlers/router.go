@@ -1,40 +1,36 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
+
+	"github.com/BlochLior/doc-analyzer-ai/internal/db"
 )
 
-// SetupRouter configures and returns the main HTTP router with middleware
-func SetupRouter() http.Handler {
-	// Create a new ServeMux (Go's built-in HTTP request multiplexer)
+type Handlers struct {
+	Store *db.Store
+}
+
+func NewHandlers(store *db.Store) *Handlers {
+	return &Handlers{Store: store}
+}
+
+// SetupRouter configures and returns the main HTTP router.
+func (h *Handlers) SetupRouter() http.Handler {
 	mux := http.NewServeMux()
 
-	// --- Define application routes here ---
-	mux.HandleFunc("/health", healthCheckHandler)
-	mux.HandleFunc("/analyze", analyzeDocumentHandler)
-	mux.HandleFunc("/documents", listDocumentsHandler)
+	// Public routes
+	mux.HandleFunc("/health", h.healthCheckHandler) // Call handler method on h
 
-	log.Println("HTTP router configured (without CORS).")
+	// Document-related routes
+	mux.HandleFunc("POST /documents", h.createDocumentHandler) // Specific method for POST
+	mux.HandleFunc("GET /documents", h.listDocumentsHandler)   // Specific method for GET
+	// You might add specific handlers for GET /documents/{id}, PUT /documents/{id}, DELETE /documents/{id} later
+
 	return mux
 }
 
-// healthCheckHandler is a simple handler to check if the server is alive
-func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+// healthCheckHandler is a simple handler to check if the server is alive.
+func (h *Handlers) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
-}
-
-// placeholder handlers for now:
-func analyzeDocumentHandler(w http.ResponseWriter, r *http.Request) {
-	// This will later contain logic to process document uploads/text
-	// and call the AI service.
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("Analyze Document endpoint not implemented yet."))
-}
-
-func listDocumentsHandler(w http.ResponseWriter, r *http.Request) {
-	// This will later contain logic to list stored documents.
-	w.WriteHeader(http.StatusNotImplemented)
-	w.Write([]byte("List Documents endpoint not implemented yet."))
 }

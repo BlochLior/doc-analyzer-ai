@@ -1,51 +1,33 @@
-
 services:
-  # Service for the PostgreSQL database
   db:
-    image: postgres:16-alpine # Use the official PostgreSQL image (alpine variant is smaller)
-    container_name: doc_analyzer_ai_db # Assign a friendly name to the container
+    image: postgres:16
+    container_name: doc_analyzer_ai_db
     ports:
-      - "5432:5432" # Map host port 5432 to container port 5432
-    environment: # Set environment variables for the PostgreSQL container
-      POSTGRES_DB: doc_analyzer_ai_db # Database name
-      POSTGRES_USER: user # Database user
-      POSTGRES_PASSWORD: password # Database password
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: "doc_analyzer_ai_db"
+      POSTGRES_USER: "user"
+      POSTGRES_PASSWORD: "123"
     volumes:
-      # Persist database data to a named volume on the host.
-      # This prevents data loss when the container is stopped or removed.
-      - db_data:/var/lib/postgresql/data
-    healthcheck: # Define a health check for the database service
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"] # Check if DB is ready
-      interval: 5s # Check every 5 seconds
-      timeout: 5s # Timeout after 5 seconds
-      retries: 5 # Retry 5 times before considering it unhealthy
-      start_period: 10s # Give the DB 10 seconds to start up before checking
+      - ./db_data_local:/var/lib/postgresql/data
+      - ./configs/postgresql.conf:/var/lib/postgresql/data/postgresql.conf # <-- Ensure this is also pointed to /data/
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  # Service for your Go application
   app:
-    build:
-      context: . # Build the image from the current directory (where Dockerfile is located)
-      dockerfile: Dockerfile # Specify the Dockerfile to use
-    container_name: doc_analyzer_ai_app # Assign a friendly name to the container
+    build: .
+    container_name: doc_analyzer_ai_app
     ports:
-      - "8080:8080" # Map host port 8080 to container port 8080
-    environment: # Set environment variables for your Go app
-      # These variables will be accessible inside your Go application
-      # We'll use these later to connect to the database
-      DB_HOST: db # The hostname of the database service (matches the service name in docker-compose)
-      DB_PORT: 5432
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_NAME: doc_analyzer_ai_db
-    depends_on: # Ensure the 'db' service starts before the 'app' service
+      - "8000:8000"
+    environment:
+      DB_HOST: "db" # 'db' is the service name within the Docker network
+      DB_PORT: "5432"
+      DB_USER: "user"
+      DB_PASSWORD: "123"
+      DB_NAME: "doc_analyzer_ai_db"
+    depends_on:
       db:
-        condition: service_healthy # Wait until the 'db' service reports as healthy
-    # Optional: If your Go app needs to access more host resources or network
-    # uncomment the following line and adjust as needed for development.
-    # For now, not strictly necessary for this basic setup.
-    # volumes:
-    #   - .:/app # Mount the current directory into the container for live reloading (dev only)
-
-# Define named volumes
-volumes:
-  db_data: # This volume will store your PostgreSQL data persistently
+        condition: service_healthy
